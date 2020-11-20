@@ -1,7 +1,9 @@
 package dirs_test
 
 import (
+	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -24,11 +26,19 @@ func setUp() {
 }
 
 var d dirs.Dirs
+var proj1, proj2, proj3, cwd string
+var err error
 
-var testData string = `{
-	"proj1": "/home/thang/projects/personal/qcd/dirs/proj1",
-	"proj2": "/home/thang/projects/personal/qcd/dirs/proj2"
-}`
+func makeTestData() string {
+	cwd, err = os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	proj1 = filepath.Join(cwd, "proj1")
+	proj2 = filepath.Join(cwd, "proj2")
+	proj3 = filepath.Join(cwd, "proj3")
+	return fmt.Sprintf(`{"proj1": "%s", "proj2": "%s"}`, proj1, proj2)
+}
 
 var _ = Describe("Dirs", func() {
 
@@ -37,7 +47,7 @@ var _ = Describe("Dirs", func() {
 	})
 
 	BeforeEach(func() {
-		ioutil.WriteFile(dirs.FILEPATH, []byte(testData), 0611)
+		ioutil.WriteFile(dirs.FILEPATH, []byte(makeTestData()), 0611)
 		d = dirs.Dirs{}
 		d.Init(dirs.FILEPATH)
 	})
@@ -51,13 +61,20 @@ var _ = Describe("Dirs", func() {
 				Expect(filepath.Abs("dir.json")).To(BeAnExistingFile())
 			})
 		})
+
+		Context("With an existing json file", func() {
+			It("Should parse the json correctly", func() {
+				Expect(d).To(HaveKeyWithValue("proj1", proj1))
+				Expect(d).To(HaveKeyWithValue("proj2", proj2))
+			})
+		})
 	})
 
 	Describe("AddOne", func() {
 		Context("With a valid alias and path", func() {
 			It("Should add a valid alias-path pair", func() {
-				d.AddOne("test", "/home/thang/projects/personal/qcd/dirs")
-				Expect(d).To(HaveKeyWithValue("test", "/home/thang/projects/personal/qcd/dirs"))
+				d.AddOne("test", cwd)
+				Expect(d).To(HaveKeyWithValue("test", cwd))
 			})
 		})
 	})
@@ -66,7 +83,7 @@ var _ = Describe("Dirs", func() {
 		Context("With a valid alias", func() {
 			It("Should add a alias-cwd pair", func() {
 				d.AddCurrent("cwd")
-				Expect(d).To(HaveKeyWithValue("cwd", "/home/thang/projects/personal/qcd/dirs"))
+				Expect(d).To(HaveKeyWithValue("cwd", cwd))
 			})
 		})
 	})
@@ -75,14 +92,14 @@ var _ = Describe("Dirs", func() {
 		Context("With an existing alias and valid new relative path", func() {
 			It("Should update the alias with the abs path", func() {
 				d.UpdateOne("proj2", "./proj3")
-				Expect(d).To(HaveKeyWithValue("proj2", "/home/thang/projects/personal/qcd/dirs/proj3"))
+				Expect(d).To(HaveKeyWithValue("proj2", proj3))
 			})
 		})
 
 		Context("With an existing alias and valid new abs path", func() {
 			It("Should update the alias with the abs path", func() {
-				d.UpdateOne("proj1", "/home/thang/projects/personal/qcd/dirs/proj2")
-				Expect(d).To(HaveKeyWithValue("proj1", "/home/thang/projects/personal/qcd/dirs/proj2"))
+				d.UpdateOne("proj1", proj2)
+				Expect(d).To(HaveKeyWithValue("proj1", proj2))
 			})
 		})
 	})
@@ -92,7 +109,7 @@ var _ = Describe("Dirs", func() {
 			It("Should delete the matching entry", func() {
 				Expect(len(d)).To(Equal(2))
 				d.DeleteOne("proj1")
-				Expect(d).ToNot(HaveKeyWithValue("proj1", "/home/thang/projects/personal/qcd/dirs/proj1"))
+				Expect(d).ToNot(HaveKeyWithValue("proj1", proj1))
 				Expect(len(d)).To(Equal(1))
 			})
 		})
@@ -104,7 +121,7 @@ var _ = Describe("Dirs", func() {
 				os.Remove("proj1")
 				d.Clean()
 				Expect(d).ToNot(HaveKey("proj1"))
-				Expect(d).ToNot(HaveKeyWithValue("proj1", "/home/thang/projects/personal/qcd/dirs/proj1"))
+				Expect(d).ToNot(HaveKeyWithValue("proj1", proj1))
 				Expect(len(d)).To(Equal(1))
 			})
 		})
