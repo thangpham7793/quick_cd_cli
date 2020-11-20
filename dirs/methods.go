@@ -100,7 +100,7 @@ func (d *Dirs) Save() {
 
 //AddOne adds a new pair of alias and path
 func (d *Dirs) AddOne(alias, path string) {
-	if clean, err := processPath(path); err != nil && !d.hasAlias(alias) {
+	if clean, err := processPath(path); err == nil && !d.hasAlias(alias) {
 		(*d)[alias] = clean
 		d.Save()
 	} else {
@@ -111,7 +111,7 @@ func (d *Dirs) AddOne(alias, path string) {
 
 //UpdateOne updates an existing path with the given new path
 func (d *Dirs) UpdateOne(alias, path string) {
-	if clean, err := processPath(path); err != nil && d.hasAlias(alias) {
+	if clean, err := processPath(path); err == nil && d.hasAlias(alias) {
 		(*d)[alias] = clean
 		d.Save()
 	} else {
@@ -124,8 +124,9 @@ func (d *Dirs) DeleteOne(alias string) {
 	if d.hasAlias(alias) {
 		delete(*d, alias)
 		d.Save()
+	} else {
+		fmt.Printf("no such alias %s", alias)
 	}
-	fmt.Printf("no such alias %s", alias)
 }
 
 //Clean removes aliases with invalid paths

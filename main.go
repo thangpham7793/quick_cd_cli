@@ -11,5 +11,6 @@ func main() {
 	j := dirs.Dirs{}
 	//Should create an empty json file
 	j.Init(dirs.FILEPATH)
-	j.AddOne("qcd", "/foo")
+	j.AddOne("qcd", ".")
+	fmt.Println(j)
 }
