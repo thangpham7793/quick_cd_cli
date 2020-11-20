@@ -13,30 +13,37 @@ import (
 )
 
 func cleanUp() {
-	os.Remove(dirs.FILEPATH)
+	os.Remove(dirs.PathToFile)
 	os.Remove("proj1")
 	os.Remove("proj2")
 	os.Remove("proj3")
 }
 
-func setUp() {
-	os.Mkdir("proj1", 0611)
-	os.Mkdir("proj2", 0611)
-	os.Mkdir("proj3", 0611)
-}
-
 var d dirs.Dirs
 var proj1, proj2, proj3, cwd string
 var err error
+var testFileName string = "test_dir.json"
 
-func makeTestData() string {
+func setUp() {
+
 	cwd, err = os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	proj1 = filepath.Join(cwd, "proj1")
 	proj2 = filepath.Join(cwd, "proj2")
 	proj3 = filepath.Join(cwd, "proj3")
+
+	os.Mkdir(proj1, 0611)
+	os.Mkdir(proj2, 0611)
+	os.Mkdir(proj3, 0611)
+
+	d = dirs.Dirs{}
+	d.Init(testFileName)
+}
+
+func makeTestData() string {
 	return fmt.Sprintf(`{"proj1": "%s", "proj2": "%s"}`, proj1, proj2)
 }
 
@@ -47,20 +54,12 @@ var _ = Describe("Dirs", func() {
 	})
 
 	BeforeEach(func() {
-		ioutil.WriteFile(dirs.FILEPATH, []byte(makeTestData()), 0611)
+		ioutil.WriteFile(dirs.PathToFile, []byte(makeTestData()), 0611)
 		d = dirs.Dirs{}
-		d.Init(dirs.FILEPATH)
+		d.Init(testFileName)
 	})
 
 	Describe("Init", func() {
-		Context("With no json file", func() {
-			It("Should create one", func() {
-				os.Remove("dir.json")
-				d = dirs.Dirs{}
-				d.Init(dirs.FILEPATH)
-				Expect(filepath.Abs("dir.json")).To(BeAnExistingFile())
-			})
-		})
 
 		Context("With an existing json file", func() {
 			It("Should parse the json correctly", func() {
@@ -68,6 +67,16 @@ var _ = Describe("Dirs", func() {
 				Expect(d).To(HaveKeyWithValue("proj2", proj2))
 			})
 		})
+
+		Context("With no json file", func() {
+			It("Should create one", func() {
+				os.Remove(dirs.PathToFile)
+				d = dirs.Dirs{}
+				d.Init(testFileName)
+				Expect(dirs.PathToFile).To(BeAnExistingFile())
+			})
+		})
+
 	})
 
 	Describe("AddOne", func() {
@@ -107,7 +116,6 @@ var _ = Describe("Dirs", func() {
 	Describe("DeleteOne", func() {
 		Context("With a valid alias", func() {
 			It("Should delete the matching entry", func() {
-				Expect(len(d)).To(Equal(2))
 				d.DeleteOne("proj1")
 				Expect(d).ToNot(HaveKeyWithValue("proj1", proj1))
 				Expect(len(d)).To(Equal(1))

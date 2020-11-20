@@ -14,8 +14,18 @@ import (
 //Dirs a map of aliases and their abs paths
 type Dirs map[string]string
 
-//FILEPATH path to json file
-const FILEPATH = "dir.json"
+//PathToFile path to json file
+var PathToFile string = ""
+
+func setFilePath(name string) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		utils.HandleErr(err, "get home directory")
+	}
+
+	PathToFile = filepath.Join(home, name)
+	//fmt.Printf("Saving to %s\n", PathToFile)
+}
 
 // getPath helper get method
 func (d *Dirs) getPath(alias string) (path string, ok bool) {
@@ -36,7 +46,7 @@ func (d *Dirs) hasAlias(alias string) bool {
 //processPath checks if a path is valid and returns the abs path
 func processPath(path string) (abs string, err error) {
 	if isValidPath(path) {
-		abs, err := filepath.Abs(path)
+		abs, err = filepath.Abs(path)
 		utils.HandleErr(err, "get the absolute path")
 		return abs, nil
 	}
@@ -52,12 +62,14 @@ func isValidPath(path string) (valid bool) {
 }
 
 //Init fills Dirs with existing aliases and abs as k-v pairs
-func (d *Dirs) Init(path string) {
-	pairs, err := ioutil.ReadFile(FILEPATH)
+func (d *Dirs) Init(name string) {
+
+	setFilePath(name)
+	pairs, err := ioutil.ReadFile(PathToFile)
 
 	if err != nil {
 		*d = make(map[string]string)
-		err = ioutil.WriteFile(FILEPATH, []byte("{}"), 0611)
+		err = ioutil.WriteFile(PathToFile, []byte("{}"), 0611)
 		utils.HandleErr(err, "create a new empty json file")
 		return
 	}
@@ -94,7 +106,7 @@ func (d *Dirs) ListOne(alias string) {
 func (d *Dirs) Save() {
 	j, err := json.Marshal(*d)
 	utils.HandleErr(err, "marshal json")
-	err = ioutil.WriteFile(FILEPATH, j, 0611)
+	err = ioutil.WriteFile(PathToFile, j, 0611)
 	utils.HandleErr(err, "write to file")
 }
 

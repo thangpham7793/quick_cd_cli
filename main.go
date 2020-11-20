@@ -3,14 +3,15 @@ package main
 import (
 	"fmt"
 
+	"github.com/thangpham7793/qcd/app"
 	"github.com/thangpham7793/qcd/dirs"
 )
 
 func main() {
-	fmt.Println("Quick CD!")
-	j := dirs.Dirs{}
-	//Should create an empty json file
-	j.Init(dirs.FILEPATH)
-	j.AddOne("qcd", ".")
-	fmt.Println(j)
+	d := dirs.Dirs{}
+	d.Init("dir.json")
+	d.AddCurrent("cli")
+	a := app.New(app.Cmds, &d)
+	a.ExecList()
+	fmt.Println("Did not stop!")
 }
